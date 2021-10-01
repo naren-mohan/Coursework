@@ -1,0 +1,68 @@
+---
+title: "HW 1: IE 5374: Group 5"
+output: pdf_document
+---
+
+Direct to consumer marketing is an effective strategy to distribute agricultural and farmproducts to consumers. Farmers market forms an important link between farmers andconsumers that helps foster farmer consumer relationships. The United States Department ofAgriculture (USDA) has recognized the importance of farmers markets. Through its manyprograms, USDA has helped the growth of farmers markets across the country.
+
+The data file contains the following details
+
+a.Variables indicating the geographical location of the farmers market (lat, long, street, county,state etc.)
+b.Variables indicating types of products (herbs, vegetables, seafood etc.)
+c.Variables indicating type of payment accepted (cash, WIC, SNAP, SFMNP etc.)
+d.Variables indicating online social media presencee. Variables indicating date and timeThe directory of farmers market across the US is given in the file.
+
+Answer the following questions from the dataset (fm.csv). For questions 1.2-1.3 use for loop.
+
+# Importing libraries
+
+```{r libraries}
+library(readr)
+library(dplyr)
+```
+
+# Reading datasets
+
+```{r reading datasets}
+fm <- read_csv('~/Desktop/IE5374/HW 1/fm.csv')
+wd <- read_csv('/Users/simbyy/Desktop/IE5374/HW 1/wine_data.csv')
+```
+
+# Task 1.1
+1.1 **(10 points)** Compute the number of farmers markets in the United States
+
+```{r Task 1.1} 
+length(unique(fm$FMID)) 
+```
+
+# Task 1.2
+1.2 **(10 Points)** Write a code to compute the number of farmers markets by state and arrange them in descending order of number of farmers market.
+
+```{r Task 1.2}
+fm %>% group_by(State) %>% count(name="No of Farmers Markets") %>% arrange(desc(`No of Farmers Markets`))
+```
+
+# Task 1.3
+1.3 **(10 Points)** Write a code to compute the number of farmers market by cities in Massachusetts and display the top five cities.
+
+```{r Task 1.3}
+fm %>% filter(State == "Massachusetts") %>% count(city, name="count") %>% arrange(desc(count)) %>% top_n(5, count)
+```
+
+# Task 1.4
+1.4 **(10 Points)** Write a code to show the top 5 states by number of farmers market that offers coffee
+
+```{r Task 1.4}
+fm %>% filter(Coffee == 'Y') %>% group_by(State) %>% count(State, name="count") %>% arrange(desc(count)) %>% head(5)
+```
+
+### From the **“wine_data.csv”** answer the following question
+
+# Task 2.1
+2.1 **(20 points)** Use the “designation” variable and calculate the number of 20 year old wine in the dataset.
+
+```{r Task 2.1}
+wd <- wd %>% mutate(lc_designation = str_to_lower(wd$designation))
+wd_20 <- wd %>% filter(str_detect(lc_designation, '20 year|20 yr|20 ano|20-year'))
+```
+
