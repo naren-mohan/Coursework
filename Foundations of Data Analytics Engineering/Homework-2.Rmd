@@ -1,0 +1,345 @@
+---
+title: "Homework-2"
+author: "Naren Mohan, Srujana Gaddam, Simran Bhatia"
+date: "9/27/2021"
+output: html_document
+---
+
+```{r echo=TRUE, eval=TRUE, message=FALSE}
+library("dplyr")
+library("magrittr")
+library("ggplot2")
+library("lubridate")
+library("stringr")
+library("reshape2")
+
+```
+
+### Problem 1 (20 points)
+
+```{r echo=TRUE, eval=TRUE}
+
+print("Current Range of x: 1 to 1000")
+x <- 1:1000
+
+tic <- Sys.time()
+for (i in 1:length(x)) {
+  x[i] <- x[i] * 2
+}
+toc <- Sys.time()
+
+time_for_1 <- (toc - tic) * 1000
+cat("Time taken by the \"for loop\":", time_for_1, "ms\n")
+
+x <- 1:1000
+
+tic <- Sys.time()
+x <- x * 2
+toc <- Sys.time()
+
+time_vec_1 <- (toc - tic) * 1000
+cat("Time taken by the vector operation:", time_vec_1, "ms\n")
+
+print("Current Range of x: 1 to 100000")
+x <- 1:100000
+
+tic <- Sys.time()
+for (i in 1:length(x)) {
+  x[i] <- x[i] * 2
+}
+toc <- Sys.time()
+
+time_for_2 <- (toc - tic) * 1000
+cat("Time taken by the \"for loop\":", time_for_2, "ms\n")
+
+x <- 1:100000
+
+tic <- Sys.time()
+x <- x * 2
+toc <- Sys.time()
+
+time_vec_2 <- (toc - tic) * 1000
+cat("Time taken by the vector operation:", time_vec_2, "ms\n")
+
+print("Current Range of x: 1 to 1000000")
+x <- 1:1000000
+
+tic <- Sys.time()
+for (i in 1:length(x)) {
+  x[i] <- x[i] * 2
+}
+toc <- Sys.time()
+
+time_for_3 <- (toc - tic) * 1000
+cat("Time taken by the \"for loop\":", time_for_3, "ms\n")
+
+x <- 1:1000000
+
+tic <- Sys.time()
+x <- x * 2
+toc <- Sys.time()
+
+time_vec_3 <- (toc - tic) * 1000
+cat("Time taken by the vector operation:", time_vec_3, "ms\n")
+
+print("Current Range of x: 1 to 10000000")
+x <- 1:10000000
+
+tic <- Sys.time()
+for (i in 1:length(x)) {
+  x[i] <- x[i] * 2
+}
+toc <- Sys.time()
+
+time_for_4 <- (toc - tic) * 1000
+cat("Time taken by the \"for loop\":", time_for_4, "ms\n")
+
+x <- 1:10000000
+
+tic <- Sys.time()
+x <- x * 2
+toc <- Sys.time()
+
+time_vec_4 <- (toc - tic) * 1000
+cat("Time taken by the vector operation:", time_vec_4, "ms\n")
+
+```
+
+#### Tabulating the results
+```{r echo=TRUE, eval=TRUE}
+df_time <- data.frame("range_of_x" = c("1 to 1,000", "1 to 100,000", "1 to 1,000,000", 
+                                     "1 to 10,000,000"),
+                      "time_taken_for_loop" = c(time_for_1, time_for_2, time_for_3, time_for_4),
+                      "time_taken_vector" = c(time_vec_1, time_vec_2, time_vec_3, time_vec_4))
+
+df_time$time_taken_for_loop <- as.numeric(df_time$time_taken_for_loop)
+df_time$time_taken_vector <- as.numeric(df_time$time_taken_vector)
+
+df_time_melt <- melt(df_time[, c('range_of_x', 'time_taken_for_loop', 'time_taken_vector')], id.vars=1)
+df_time_melt$range_of_x <- factor(df_time_melt$range_of_x, levels = c("1 to 1,000", "1 to 100,000",
+                                                         "1 to 1,000,000", "1 to 10,000,000"))
+
+print(df_time)
+
+print(ggplot(df_time_melt, aes(x=range_of_x, y=value))+
+  geom_bar(aes(fill = variable), stat = "identity", position = "dodge") + 
+  theme(text = element_text(size=15), axis.text.x = element_text(size = 8)))
+
+```
+
+
+#### Write your observations on the effect of vector length on computing time using “for loop” and vector operation
+
+From the above bar plot, it is clear that vector operations take significantly lesser time than the for loop operations. As the length of the vector increases, the difference between the time taken to execute for loop and vector operations increases by huge margins. Hence, it is highly recommended to use vector operations wherever possible in place of for loops. This is due to SIMD (Single Instruction, Multiple Data) processing which enables the processor to execute single type of function (here multiplying by 2) on many elements parallelly as opposed to for loop's sequential loop execution.
+
+
+### Problem 2 (10 Points)
+
+#### Write a custom function that accepts a dataframe from the user and returns a dataframe sample with a random number of records. The fraction of records must be given by the user in the form of an argument. If the user enters a non-numeric argument, notify using an error message that they have to enter a numeric value.
+```{r echo=TRUE, eval=TRUE}
+
+rand_sample_func <- function(df, frac) {
+  if (!is.integer(frac)) {
+    print("The input argument \"frac\" must be an integer")
+    return()
+  } else if(dim(df)[1] < frac) {
+    print("The number of records in the dataframe is lesser than fraction value")
+    return()
+  }
+  # Making it truly random
+  rand_vec <- sample((1:dim(df)[1]), prob=c(rep(1, times = dim(df)[1])), size=frac) 
+  return(df[rand_vec, ])
+}
+
+# Verifying using iris dataset
+print(rand_sample_func(iris, 10L))
+```
+
+### Problem 3 (Use dplyr, tidyr, lubridate, stringr packages)
+
+#### Reading the dataset
+```{r eval=TRUE, echo=TRUE}
+df_covid <- read.csv("COVID_19_Nursing_Home_Data_2021_09_12.csv")
+```
+
+
+#### 3.1 Count the number of nursing home facilities by state and order them in descending order (10points)
+
+```{r eval=TRUE, echo=TRUE}
+ans_state <- df_covid %>%
+  group_by(provider_state) %>%
+  summarise("number_of_nursing_home_facilities" = length(unique(provider_name))) %>%
+  arrange(desc(number_of_nursing_home_facilities))
+
+print(ans_state)
+```
+
+#### 3.2 Display the top five counties by number of nursing home facilities (10 points)
+
+```{r eval=TRUE, echo=TRUE}
+
+ans_county <- df_covid %>%
+  group_by(county) %>%
+  summarise("number_of_nursing_home_facilities" = length(unique(provider_name))) %>%
+  arrange(desc(number_of_nursing_home_facilities))
+
+print(head(ans_county, 5))
+
+```
+
+
+#### 3.3 Display four tables containing the states which experienced more than 20 weeks of shortage of nursing staff (table 1), clinical staff (table 2), aides (table 3), and other staff (table 4) (20 points)
+
+```{r eval=TRUE, echo=TRUE}
+
+df_covid$shortage_of_nursing_staff <- ifelse((df_covid$shortage_of_nursing_staff == "Y") | 
+                                               (df_covid$shortage_of_nursing_staff == 1),
+                                                  1, 0)
+
+ans_nursing <- df_covid %>%
+  group_by(provider_state) %>%
+  summarise("shortage_nursing" = sum(shortage_of_nursing_staff, na.rm = T)) %>%
+  subset(shortage_nursing > 20, select = c(provider_state, shortage_nursing)) %>%
+  arrange(desc(shortage_nursing))
+
+print(ans_nursing)
+
+df_covid$shortage_of_clinical_staff <- ifelse((df_covid$shortage_of_clinical_staff == "Y") |                                                (df_covid$shortage_of_clinical_staff == 1),
+                                                  1, 0)
+ans_clinical <- df_covid %>%
+  group_by(provider_state) %>%
+  summarise("shortage_clinical" = sum(shortage_of_clinical_staff, na.rm = T)) %>%
+  subset(shortage_clinical > 20, select = c(provider_state, shortage_clinical)) %>%
+  arrange(desc(shortage_clinical))
+
+print(ans_clinical)
+
+df_covid$shortage_of_aides <- ifelse((df_covid$shortage_of_aides == "Y") | 
+                                               (df_covid$shortage_of_aides == 1),
+                                                  1, 0)
+
+ans_aides <- df_covid %>%
+  group_by(provider_state) %>%
+  summarise("shortage_aides" = sum(shortage_of_aides, na.rm = T)) %>%
+  subset(shortage_aides > 20, select = c(provider_state, shortage_aides)) %>%
+  arrange(desc(shortage_aides))
+
+print(ans_aides)
+
+df_covid$shortage_of_other_staff <- ifelse((df_covid$shortage_of_other_staff == "Y") | 
+                                               (df_covid$shortage_of_other_staff == 1),
+                                                  1, 0)
+ans_other <- df_covid %>%
+  group_by(provider_state) %>%
+  summarise("shortage_other" = sum(shortage_of_other_staff, na.rm = T)) %>%
+  subset(shortage_other > 20, select = c(provider_state, shortage_other)) %>%
+  arrange(desc(shortage_other))
+
+print(ans_other)
+```
+
+#### 3.4 Display counties that faced more than 10 weeks shortage of N95 masks (table 1), surgical masks (table 2), eye protection (table 3), supply of gowns (table 4), supply of gloves (table 5), and supply of hand sanitizer (table 6) (20 points)
+
+```{r eval=TRUE, echo=TRUE}
+
+df_covid$any_current_supply_of_n95_masks <- ifelse((df_covid$any_current_supply_of_n95_masks == "N") | 
+            (df_covid$any_current_supply_of_n95_masks == 1),
+                                                  1, 0)
+
+ans_n95 <- df_covid %>%
+  group_by(county) %>%
+  summarise("shortage_n95" = sum(any_current_supply_of_n95_masks, na.rm = T)) %>%
+  subset(shortage_n95 > 10, select = c(county, shortage_n95)) %>%
+  arrange(desc(shortage_n95))
+
+print(ans_n95)
+
+# ---------------------------------------------------------------------------------
+
+df_covid$any_current_supply_of_surgical_masks <- ifelse((df_covid$any_current_supply_of_surgical_masks == "N") | 
+            (df_covid$any_current_supply_of_surgical_masks == 1),
+                                                  1, 0)
+
+ans_mask <- df_covid %>%
+  group_by(county) %>%
+  summarise("shortage_mask" = sum(any_current_supply_of_surgical_masks, na.rm = T)) %>%
+  subset(shortage_mask > 10, select = c(county, shortage_mask)) %>%
+  arrange(desc(shortage_mask))
+
+print(ans_mask)
+
+# ---------------------------------------------------------------------------------
+
+df_covid$any_current_supply_of_eye_protection <- ifelse((df_covid$any_current_supply_of_eye_protection == "N") | 
+            (df_covid$any_current_supply_of_eye_protection == 1),
+                                                  1, 0)
+
+ans_eye <- df_covid %>%
+  group_by(county) %>%
+  summarise("shortage_eye" = sum(any_current_supply_of_eye_protection, na.rm = T)) %>%
+  subset(shortage_eye > 10, select = c(county, shortage_eye)) %>%
+  arrange(desc(shortage_eye))
+
+print(ans_eye)
+
+# ---------------------------------------------------------------------------------
+
+df_covid$any_current_supply_of_gowns <- ifelse((df_covid$any_current_supply_of_gowns == "N") | 
+            (df_covid$any_current_supply_of_gowns == 1),
+                                                  1, 0)
+
+ans_gown <- df_covid %>%
+  group_by(county) %>%
+  summarise("shortage_gown" = sum(any_current_supply_of_gowns, na.rm = T)) %>%
+  subset(shortage_gown > 10, select = c(county, shortage_gown)) %>%
+  arrange(desc(shortage_gown))
+
+print(ans_gown)
+
+# ---------------------------------------------------------------------------------
+
+df_covid$any_current_supply_of_gloves <- ifelse((df_covid$any_current_supply_of_gloves == "N") | 
+            (df_covid$any_current_supply_of_gloves == 1),
+                                                  1, 0)
+
+ans_gloves <- df_covid %>%
+  group_by(county) %>%
+  summarise("shortage_gloves" = sum(any_current_supply_of_gloves, na.rm = T)) %>%
+  subset(shortage_gloves > 10, select = c(county, shortage_gloves)) %>%
+  arrange(desc(shortage_gloves))
+
+print(ans_gloves)
+
+# ---------------------------------------------------------------------------------
+
+df_covid$any_current_supply_of_hand_sanitizer <- ifelse((df_covid$any_current_supply_of_hand_sanitizer == "N") | 
+            (df_covid$any_current_supply_of_hand_sanitizer == 1),
+                                                  1, 0)
+
+ans_sanitizer <- df_covid %>%
+  group_by(county) %>%
+  summarise("shortage_sanitizer" = sum(any_current_supply_of_hand_sanitizer, na.rm = T)) %>%
+  subset(shortage_sanitizer > 10, select = c(county, shortage_sanitizer)) %>%
+  arrange(desc(shortage_sanitizer))
+
+print(ans_sanitizer)
+
+```
+
+#### 3.5 Display all the nursing home facilities that experienced a shortage of ventilator supplies for more than 10 weeks (10 points)
+
+```{r eval=TRUE, echo=TRUE}
+
+df_covid$any_current_supply_of_ventilator_supplies <-  
+  ifelse((df_covid$any_current_supply_of_ventilator_supplies == "N") |
+  (df_covid$any_current_supply_of_ventilator_supplies == 1), 1, 0)
+
+ans_ventilator <- df_covid %>%
+  group_by(provider_name) %>%
+  summarise("shortage_ventilator" = sum(any_current_supply_of_ventilator_supplies, na.rm = T)) %>%
+  subset(shortage_ventilator > 10, select = c(provider_name, shortage_ventilator)) %>%
+  arrange(desc(shortage_ventilator))
+
+print(ans_ventilator)
+
+```
